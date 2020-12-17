@@ -1,0 +1,413 @@
+ 
+
+Getting and Cleaning Data: Week 2 Quiz
+
+
+
+Question 1
+
+Register an application with the Github API here https://github.com/settings/applications.
+
+Access the API to get information on your instructors repositories (hint: this is the url you want “https://api.github.com/users/jtleek/repos”).
+
+Use this data to find the time that the datasharing repo was created. What time was it created?
+
+This tutorial may be useful (https://github.com/hadley/httr/blob/master/demo/oauth2-github.r).
+
+You may also need to run the code in the base R package and not R studio.
+
+
+Answer
+
+
+Loading packages..
+
+library(httr)
+
+
+Find OAuth settings for github: http://developer.github.com/v3/oauth/
+
+oauth_endpoints("github")
+
+<oauth_endpoint>
+ authorize: https://github.com/login/oauth/authorize
+ access:    https://github.com/login/oauth/access_token
+
+
+Register an application at https://github.com/settings/applications
+
+myapp <- oauth_app("github",
+  key = "75ffc4989df8001de43a",
+  secret = "389877827ca7031f4586a37206816ec5152088dc")
+
+
+Get OAuth credentials
+
+github_token <- oauth2.0_token(oauth_endpoints("github"), myapp)
+
+
+Use API
+
+req <- GET("https://api.github.com/users/jtleek/repos", config(token = github_token))
+stop_for_status(req)
+output <- content(req)
+
+
+Find “datasharing”
+
+datashare <- which(sapply(output, FUN=function(X) "datasharing" %in% X))
+datashare
+
+[1] 15
+
+
+Find the time that the datasharing repo was created.
+
+list(output[[15]]$name, output[[15]]$created_at)
+
+[[1]]
+[1] "datasharing"
+
+[[2]]
+[1] "2013-11-07T13:25:07Z"
+
+
+Question 2
+
+The sqldf package allows for execution of SQL commands on R data frames. We will use the sqldf package to practice the queries we might send with the dbSendQuery() command in RMySQL.
+
+Download the American Community Survey data and load it into an R object called: acs https://d396qusza40orc.cloudfront.net/getdata%2Fdata%2Fss06pid.csv
+
+Which of the following commands will select only the data for the probability weights pwgtp1 with ages less than 50?
+
+
+Answer
+
+Loading packages…
+
+library(sqldf)
+
+
+Downloading file…
+
+fileUrl <- "https://d396qusza40orc.cloudfront.net/getdata%2Fdata%2Fss06pid.csv"
+download.file(fileUrl, destfile = "acs.csv")
+
+trying URL 'https://d396qusza40orc.cloudfront.net/getdata%2Fdata%2Fss06pid.csv'
+Content type 'text/csv' length 11462469 bytes (10.9 MB)
+==================================================
+downloaded 10.9 MB
+
+
+Loading data…
+
+acs <- read.csv("acs.csv")
+head(acs)
+
+ 
+ 
+	
+RT
+<fctr>
+	
+SERIALNO
+<int>
+	
+SPORDER
+<int>
+	
+PUMA
+<int>
+	
+ST
+<int>
+	
+ADJUST
+<int>
+	
+PWGTP
+<int>
+	
+AGEP
+<int>
+	
+CIT
+<int>
+	
+1	P	186	1	700	16	1015675	89	43	1	
+2	P	186	2	700	16	1015675	92	42	1	
+3	P	186	3	700	16	1015675	107	16	1	
+4	P	186	4	700	16	1015675	91	14	1	
+5	P	306	1	700	16	1015675	309	29	1	
+6	P	395	1	100	16	1015675	108	40	1	
+6 rows | 1-10 of 239 columns
+
+
+Finding answer…
+
+
+    Option A:
+
+detach("package:RMySQL", unload=TRUE)
+sqldf("select pwgtp1 from acs where AGEP < 50")
+
+pwgtp1
+<int>
+87
+88
+94
+91
+539
+192
+153
+232
+205
+226
+...
+1-10 of 10,093 rows
+
+
+    Option B:
+
+sqldf("select * from acs where AGEP < 50 and pwgtp1")
+
+RT
+<fctr>
+	
+SERIALNO
+<int>
+	
+SPORDER
+<int>
+	
+PUMA
+<int>
+	
+ST
+<int>
+	
+ADJUST
+<int>
+	
+PWGTP
+<int>
+	
+AGEP
+<int>
+	
+CIT
+<int>
+	
+COW
+<int>
+	
+P	186	1	700	16	1015675	89	43	1	7	
+P	186	2	700	16	1015675	92	42	1	4	
+P	186	3	700	16	1015675	107	16	1	1	
+P	186	4	700	16	1015675	91	14	1	NA	
+P	306	1	700	16	1015675	309	29	1	5	
+P	395	1	100	16	1015675	108	40	1	8	
+P	395	2	100	16	1015675	90	15	1	NA	
+P	506	1	700	16	1015675	239	28	1	1	
+P	506	2	700	16	1015675	213	30	1	1	
+P	506	3	700	16	1015675	219	4	1	NA	
+...
+1-10 of 10,093 rows | 1-10 of 239 columns
+
+
+    Option C:
+
+sqldf("select pwgtp1 from acs")
+
+pwgtp1
+<int>
+87
+88
+94
+91
+539
+192
+153
+232
+205
+226
+...
+1-10 of 14,931 rows
+
+
+    Option D:
+
+sqldf("select pwgtp1 from acs where AGEP < 50")
+
+pwgtp1
+<int>
+87
+88
+94
+91
+539
+192
+153
+232
+205
+226
+...
+1-10 of 10,093 rows
+
+
+Result:
+
+Option D: sqldf(“select pwgtp1 from acs where AGEP < 50”)
+
+
+Question 3
+
+Using the same data frame you created in the previous problem, what is the equivalent function to unique(acs$AGEP)
+
+
+Answer
+
+Z <- unique(acs$AGEP)
+
+
+    Option A:
+
+A <- sqldf("select AGEP where unique from acs")
+
+Error in result_create(conn@ptr, statement) : near "unique": syntax error
+
+
+    Option B:
+
+B <- sqldf("select distinct AGEP from acs")
+identical(Z, B$AGEP)
+
+[1] TRUE
+
+
+    Option C:
+
+C <- sqldf("select distinct pwgtp1 from acs")
+identical(Z, C$AGEP)
+
+[1] FALSE
+
+
+    Option D:
+
+D <- sqldf("select unique AGEP from acs")
+
+Error in result_create(conn@ptr, statement) : near "unique": syntax error
+
+
+Result:
+
+Option B: sqldf(“select distinct AGEP from acs”)
+
+
+
+Question 4
+
+How many characters are in the 10th, 20th, 30th and 100th lines of HTML from this page:
+
+http://biostat.jhsph.edu/~jleek/contact.html
+
+(Hint: the nchar() function in R may be helpful)
+Answer
+
+Fetching data…
+
+htmlUrl <- url("http://biostat.jhsph.edu/~jleek/contact.html")
+htmlCode <- readLines(htmlUrl)
+close(htmlUrl)
+
+
+Viewing data…
+
+head(htmlCode)
+
+[1] "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">"
+[2] ""                                                                                                                 
+[3] "<html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\" lang=\"en\">"                                        
+[4] ""                                                                                                                 
+[5] "<head>"                                                                                                           
+[6] ""                                                                                                                 
+
+
+Finding answer…
+
+c(nchar(htmlCode[10]), nchar(htmlCode[20]), nchar(htmlCode[30]), nchar(htmlCode[100]))
+
+[1] 45 31  7 25
+
+
+
+Question 5
+
+Read this data set into R and report the sum of the numbers in the fourth of the nine columns.
+
+https://d396qusza40orc.cloudfront.net/getdata%2Fwksst8110.for
+
+Original source of the data: http://www.cpc.ncep.noaa.gov/data/indices/wksst8110.for
+
+(Hint: this is a fixed width file format)
+
+
+Answer
+
+Fetching data…
+
+fileUrl <- "https://d396qusza40orc.cloudfront.net/getdata%2Fwksst8110.for"
+SST <- read.fwf(fileUrl, skip=4, widths=c(12, 7, 4, 9, 4, 9, 4, 9, 4))
+
+
+Viewing file…
+
+head(SST)
+
+ 
+ 
+	
+V1
+<fctr>
+	
+V2
+<dbl>
+	
+V3
+<dbl>
+	
+V4
+<dbl>
+	
+V5
+<dbl>
+	
+V6
+<dbl>
+	
+V7
+<dbl>
+	
+V8
+<dbl>
+	
+V9
+<dbl>
+1	03JAN1990	23.4	-0.4	25.1	-0.3	26.6	0.0	28.6	0.3
+2	10JAN1990	23.4	-0.8	25.2	-0.3	26.6	0.1	28.6	0.3
+3	17JAN1990	24.2	-0.3	25.3	-0.3	26.5	-0.1	28.6	0.3
+4	24JAN1990	24.4	-0.5	25.5	-0.4	26.5	-0.1	28.4	0.2
+5	31JAN1990	25.1	-0.2	25.8	-0.2	26.7	0.1	28.4	0.2
+6	07FEB1990	25.8	0.2	26.1	-0.1	26.8	0.1	28.4	0.3
+6 rows
+
+
+Finding answer…
+
+sum(SST[,4])
+
+[1] 32426.7
+
+
+END
